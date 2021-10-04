@@ -51,14 +51,14 @@ pub struct MachineryChange<M = (), K = DefaultKey> {
     /// Target state ID.
     pub to: K,
     /// Condition to met for change to happen.
-    pub condition: Box<dyn Condition<M>>,
+    pub condition: Box<dyn Condition<M> + Send + Sync>,
 }
 
 impl<M, K> MachineryChange<M, K> {
     /// Constructs new change descriptor with ID and condition.
     pub fn new<C>(to: K, condition: C) -> Self
     where
-        C: Condition<M> + 'static,
+        C: Condition<M> + 'static + Send + Sync,
     {
         Self {
             to,
@@ -67,7 +67,7 @@ impl<M, K> MachineryChange<M, K> {
     }
 
     /// Constructs new change descriptor with ID and condition.
-    pub fn new_raw<C>(to: K, condition: Box<dyn Condition<M>>) -> Self {
+    pub fn new_raw<C>(to: K, condition: Box<dyn Condition<M> + Send + Sync>) -> Self {
         Self { to, condition }
     }
 
@@ -90,7 +90,7 @@ where
 
 /// Defines machinery state with task to run and changes that can happen for this state.
 pub struct MachineryState<M = (), K = DefaultKey> {
-    task: Box<dyn Task<M>>,
+    task: Box<dyn Task<M> + Send + Sync>,
     changes: Vec<MachineryChange<M, K>>,
 }
 
@@ -98,7 +98,7 @@ impl<M, K> MachineryState<M, K> {
     /// Construct new state with task only.
     pub fn task<T>(task: T) -> Self
     where
-        T: Task<M> + 'static,
+        T: Task<M> + 'static + Send + Sync,
     {
         Self {
             task: Box::new(task),
@@ -107,7 +107,7 @@ impl<M, K> MachineryState<M, K> {
     }
 
     /// Construct new state with task only.
-    pub fn task_raw<T>(task: Box<dyn Task<M>>) -> Self {
+    pub fn task_raw<T>(task: Box<dyn Task<M> + Send + Sync>) -> Self {
         Self {
             task,
             changes: vec![],
@@ -117,7 +117,7 @@ impl<M, K> MachineryState<M, K> {
     /// Constructs new state with task and list of changes.
     pub fn new<T>(task: T, changes: Vec<MachineryChange<M, K>>) -> Self
     where
-        T: Task<M> + 'static,
+        T: Task<M> + 'static + Send + Sync,
     {
         Self {
             task: Box::new(task),
@@ -126,7 +126,7 @@ impl<M, K> MachineryState<M, K> {
     }
 
     /// Constructs new state with task and list of changes.
-    pub fn new_raw<T>(task: Box<dyn Task<M>>, changes: Vec<MachineryChange<M, K>>) -> Self {
+    pub fn new_raw<T>(task: Box<dyn Task<M> + Send + Sync>, changes: Vec<MachineryChange<M, K>>) -> Self {
         Self { task, changes }
     }
 
@@ -245,7 +245,7 @@ where
 {
     states: HashMap<K, MachineryState<M, K>>,
     active_state: Option<K>,
-    initial_state_decision_maker: Option<Box<dyn DecisionMaker<M, K>>>,
+    initial_state_decision_maker: Option<Box<dyn DecisionMaker<M, K> + Send + Sync>>,
 }
 
 impl<M, K> Machinery<M, K>
@@ -266,7 +266,7 @@ where
     /// This is useful when we want to use machinery in hierarchy.
     pub fn initial_state_decision_maker<DM>(mut self, decision_maker: DM) -> Self
     where
-        DM: DecisionMaker<M, K> + 'static,
+        DM: DecisionMaker<M, K> + 'static + Send + Sync,
     {
         self.initial_state_decision_maker = Some(Box::new(decision_maker));
         self
@@ -277,7 +277,7 @@ where
     /// This is useful when we want to use machinery in hierarchy.
     pub fn initial_state_decision_maker_raw(
         mut self,
-        decision_maker: Box<dyn DecisionMaker<M, K>>,
+        decision_maker: Box<dyn DecisionMaker<M, K> + Send + Sync>,
     ) -> Self {
         self.initial_state_decision_maker = Some(decision_maker);
         self
